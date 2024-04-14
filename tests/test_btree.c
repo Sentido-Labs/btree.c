@@ -2,11 +2,11 @@
 
 void test_btree_operations(void) {
     
-    int degree = DEF_DEGREE;
+    btree_i degree = DEF_DEGREE;
     int N = DEF_N;
 
     int *vals;
-    while(!(vals = xmalloc(sizeof(int) * N))){}
+    while(!(vals = xmalloc(sizeof(int) * (size_t)N))){}
 
     for (int i = 0; i < N; i++) {
         vals[i] = i*10;
@@ -25,7 +25,7 @@ void test_btree_operations(void) {
         uint64_t hint = 0;
         uint64_t *hint_ptr = h == 0 ? NULL : &hint;
         
-        for (int i = 0; i < N; i++) {
+        for (btree_i i = 0; i < N; i++) {
             const int *v;
             v = btree_get_hint(btree, &vals[i], hint_ptr);
             assert(!v);
@@ -37,19 +37,19 @@ void test_btree_operations(void) {
 
             v = btree_get_hint(btree, &vals[i], hint_ptr);
             assert(v && *(int*)v == vals[i]);
-            assert(btree_count(btree) == (size_t)(i+1));
+            assert(btree_count(btree) == i+1);
             assert(btree_sane(btree));
 
             // delete item
             OOM_WAIT({v = btree_delete_hint(btree, &vals[i], hint_ptr);});
             assert(v && *v == vals[i]);
-            assert(btree_count(btree) == (size_t)(i));
+            assert(btree_count(btree) == i);
             assert(btree_sane(btree));
 
             // delete again, this time it will fail
             OOM_WAIT({v = btree_delete_hint(btree, &vals[i], hint_ptr);});
             assert(!v);
-            assert(btree_count(btree) == (size_t)(i));
+            assert(btree_count(btree) == i);
             assert(btree_sane(btree));
 
 
@@ -59,7 +59,7 @@ void test_btree_operations(void) {
             // reinsert item
             OOM_WAIT({v = btree_set_hint(btree, &vals[i], hint_ptr);});
             assert(!v);
-            assert(btree_count(btree) == (size_t)(i+1));
+            assert(btree_count(btree) == i+1);
             assert(btree_sane(btree));
 
             v = btree_get_hint(btree, &vals[i], hint_ptr);
@@ -74,19 +74,19 @@ void test_btree_operations(void) {
         bool ret = btree_ascend(btree, NULL, iter, &ctx);
         assert(ret && !ctx.bad && ctx.count == N);
 
-        for (int i = 0; i < N; i++) {
+        for (btree_i i = 0; i < N; i++) {
             struct iter_ctx ctx = { .btree = btree, .rev = false };
             bool ret = btree_ascend(btree, &(int){i*10}, iter, &ctx);
             assert(ret && !ctx.bad && ctx.count == N-i);
         }
 
-        for (int i = 0; i < N; i++) {
+        for (btree_i i = 0; i < N; i++) {
             struct iter_ctx ctx = { .btree = btree, .rev = false };
             bool ret = btree_ascend(btree, &(int){i*10-1}, iter, &ctx);
             assert(ret && !ctx.bad && ctx.count == N-i);
         }
 
-        for (int i = 0; i < N; i++) {
+        for (btree_i i = 0; i < N; i++) {
             struct iter_ctx ctx = { .btree = btree, .rev = false };
             bool ret = btree_ascend(btree, &(int){i*10+1}, iter, &ctx);
             assert(ret && !ctx.bad && ctx.count == N-i-1);
@@ -102,7 +102,7 @@ void test_btree_operations(void) {
             assert((!ret || i==N-1) && !ctx.bad && ctx.count == 1);
         }
 
-        for (int i = 0; i < N; i++) {
+        for (btree_i i = 0; i < N; i++) {
             struct iter_ctx ctx = { 
                 .btree = btree, 
                 .rev = false,
@@ -201,7 +201,7 @@ void test_btree_operations(void) {
             const void *v;
             OOM_WAIT({ v = btree_set(btree, &vals[i]); });
             assert(v && *(int*)v == vals[i]);
-            assert(btree_count(btree) == (size_t)N);
+            assert(btree_count(btree) == N);
             assert(btree_sane(btree));
         }
     }
@@ -312,11 +312,11 @@ void free2(void *ptr) {
 
 
 void test_btree_load(void) {
-    int degree = DEF_DEGREE;
+    btree_i degree = DEF_DEGREE;
     int N = DEF_N;
 
     int *vals;
-    while(!(vals = xmalloc(sizeof(int) * N))){}
+    while(!(vals = xmalloc(sizeof(int) * (size_t)N))){}
 
     for (int i = 0; i < N; i++) {
         vals[i] = i*10;
@@ -332,12 +332,12 @@ void test_btree_load(void) {
 
 
     // reinsert with load in order
-    qsort(vals, N, sizeof(int), compare_ints0);
-    for (int i = 0; i < N; i++) {
+    qsort(vals, (size_t)N, sizeof(int), compare_ints0);
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         OOM_WAIT({ v = btree_load(btree, &vals[i]); });
         assert(!v);
-        assert(btree_count(btree) == (size_t)(i+1));
+        assert(btree_count(btree) == i+1);
         assert(btree_sane(btree));
     }
 
@@ -352,11 +352,11 @@ void test_btree_load(void) {
         assert(btree_sane(btree));
         // reinsert with load shuffled
         shuffle(vals, N, sizeof(int));
-        for (int i = 0; i < N; i++) {
+        for (btree_i i = 0; i < N; i++) {
             const void *v;
             OOM_WAIT({ v = btree_load(btree, &vals[i]); });
             assert(!v);
-            assert(btree_count(btree) == (size_t)(i+1));
+            assert(btree_count(btree) == i+1);
             assert(btree_sane(btree));
         }
 
@@ -367,7 +367,7 @@ void test_btree_load(void) {
             const void *v;
             OOM_WAIT({ v = btree_load(btree, &vals[i]); });
             assert(v && *(int*)v == vals[i]);
-            assert(btree_count(btree) == (size_t)N);
+            assert(btree_count(btree) == N);
             assert(btree_sane(btree));
         }
     }
@@ -380,23 +380,23 @@ void test_btree_load(void) {
 
 
     // reinsert with load sorted
-    qsort(vals, N, sizeof(int), compare_ints0);
-    for (int i = 0; i < N; i++) {
+    qsort(vals, (size_t)N, sizeof(int), compare_ints0);
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         OOM_WAIT({ v = btree_load(btree, &vals[i]); });
         assert(!v);
-        assert(btree_count(btree) == (size_t)(i+1));
+        assert(btree_count(btree) == i+1);
         assert(btree_sane(btree));
     }
 
     for (int l = 0; l < 10; l++) {
         // reinsert with load sorted
-        qsort(vals, N, sizeof(int), compare_ints0);
-        for (int i = 0; i < N; i++) {
+        qsort(vals, (size_t)N, sizeof(int), compare_ints0);
+        for (btree_i i = 0; i < N; i++) {
             const void *v;
             OOM_WAIT({ v = btree_load(btree, &vals[i]); });
             assert(v && *(int*)v == vals[i]);
-            assert(btree_count(btree) == (size_t)N);
+            assert(btree_count(btree) == N);
             assert(btree_sane(btree));
         }
     }
@@ -487,8 +487,8 @@ void test_btree_delete(void) {
     int N = 1000;
 
     struct pair *pairs;
-    while (!(pairs = xmalloc(sizeof(struct pair) * N)));
-    for (int i = 0; i < N; i++) {
+    while (!(pairs = xmalloc(sizeof(struct pair) * (size_t)N)));
+    for (btree_i i = 0; i < N; i++) {
         pairs[i].key = i;
         pairs[i].val = 1;
     }
@@ -499,7 +499,7 @@ void test_btree_delete(void) {
 
     // shuffle(pairs, N, sizeof(struct pair));
 
-    for (int i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *prev;
         OOM_WAIT( { prev = btree_set(btree, &pairs[i]); } );
         assert(!prev);
@@ -508,14 +508,14 @@ void test_btree_delete(void) {
     // btree_print(btree, pair_print);
 
     // delete every other obj in btree2
-    for (int i = 0; i < N; i += 2) {
+    for (btree_i i = 0; i < N; i += 2) {
         const void *v;
         OOM_WAIT( { v = btree_delete(btree, &pairs[i]); } );
         assert(v && ((struct pair*)v)->key == pairs[i].key);
     }
 
     // get every other obj
-    for (int i = 0; i < N; i += 2) {
+    for (btree_i i = 0; i < N; i += 2) {
         const void *v;
         OOM_WAIT( { v = btree_get(btree, &pairs[i]); } );
         assert(!v);
@@ -547,7 +547,7 @@ void test_btree_iter(void) {
 
     // btree_iter_first, btree_iter_next
     assert(btree_iter_first(iter));
-    for (int i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         assert(*(int*)(btree_iter_item(iter)) == i);
         if (i == N-1) {
             assert(!btree_iter_next(iter));
@@ -559,7 +559,7 @@ void test_btree_iter(void) {
 
     // btree_iter_last, btree_iter_prev
     assert(btree_iter_last(iter));
-    for (int i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         assert(*(int*)(btree_iter_item(iter)) == N-i-1);
         if (i == N-1) {
             assert(!btree_iter_prev(iter));
@@ -570,10 +570,10 @@ void test_btree_iter(void) {
     assert(*(int*)(btree_iter_item(iter)) == 0);
 
     // btree_iter_seek
-    for (int i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         // btree_iter_seek, btree_iter_next
         assert(btree_iter_seek(iter, &i));
-        for (int j = i; j < N; j++) {
+        for (btree_i j = i; j < N; j++) {
             assert(*(int*)(btree_iter_item(iter)) == j);
             if (j == N-1) {
                 assert(!btree_iter_next(iter));
@@ -585,7 +585,7 @@ void test_btree_iter(void) {
 
         // btree_iter_seek, btree_iter_prev
         assert(btree_iter_seek(iter, &i));
-        for (int j = i; j >= 0; j--) {
+        for (btree_i j = i; j >= 0; j--) {
             assert(*(int*)(btree_iter_item(iter)) == j);
             if (j == 0) {
                 assert(!btree_iter_prev(iter));
@@ -596,22 +596,22 @@ void test_btree_iter(void) {
     }
     btree_iter_free(iter);
 
-    assert(!btree_set(btree, &(int){ N+100 }));
+    assert(!btree_set(btree, &(int){ (int)N+100 }));
     iter = btree_iter_new(btree);
     assert(iter);
-    assert(btree_iter_seek(iter, &(int){ N+1 }));
+    assert(btree_iter_seek(iter, &(int){ (int)N+1 }));
     assert(*(int*)(btree_iter_item(iter)) == N+100);
     btree_iter_free(iter);
     btree_free(btree);
 }
 
-int isearch(const void *items, size_t nitems, const void *key, bool *found, 
+btree_i isearch(const void *items, btree_i nitems, const void *key, bool *found,
     void *udata)
 {
     assert(udata == nothing);
     const int ikey = *(int*)key;
     const int *ints = items;
-    size_t i = 0;
+    btree_i i = 0;
     for (; i < nitems; i++) {
         if (ikey <= ints[i]) {
             *found = ikey == ints[i];

@@ -1,6 +1,12 @@
 #ifndef TESTS_H
 #define TESTS_H
 
+// clock_gettime() requires: _POSIX_C_SOURCE >= 199309L
+// usleep() requires:        _XOPEN_SOURCE >= 500
+//     and also if defined:  _POSIX_C_SOURCE <  200809L
+// Replacement: nanosleep(const struct timespec *req, struct timespec *rem)
+#define _POSIX_C_SOURCE 199309L
+#define _XOPEN_SOURCE 500
 #include <unistd.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -74,15 +80,15 @@ static int64_t seed = 0;
     } \
 }
 
-static void shuffle(void *array, size_t numels, size_t elsize) {
+static void shuffle(void *array, btree_i numels, size_t elsize) {
     if (numels < 2) return;
     char tmp[elsize];
     char *arr = array;
-    for (size_t i = 0; i < numels - 1; i++) {
-        int j = i + rand() / (RAND_MAX / (numels - i) + 1);
-        memcpy(tmp, arr + j * elsize, elsize);
-        memcpy(arr + j * elsize, arr + i * elsize, elsize);
-        memcpy(arr + i * elsize, tmp, elsize);
+    for (btree_i i = 0; i < numels - 1; i++) {
+        btree_i j = i + (btree_i)rand() / (RAND_MAX / (numels - i) + 1);
+        memcpy(tmp,                      arr + (size_t)j * elsize, elsize);
+        memcpy(arr + (size_t)j * elsize, arr + (size_t)i * elsize, elsize);
+        memcpy(arr + (size_t)i * elsize, tmp,                      elsize);
     }
 }
 
@@ -150,7 +156,7 @@ void cleanup_test_allocator(void) {
 //         compare, udata);
 // }
 
-struct btree *btree_new_for_test(size_t elsize, size_t degree,
+struct btree *btree_new_for_test(size_t elsize, btree_i degree,
     int (*compare)(const void *a, const void *b, void *udata),
     void *udata)
 {
@@ -320,10 +326,10 @@ bool pair_update_check_desc(const void *item, void *udata) {
     return true;
 }
 
-char *rand_key(int nchars) {
+char *rand_key(size_t nchars) {
     char *key = xmalloc(nchars+1);
-    for (int i = 0 ; i < nchars; i++) {
-        key[i] = (rand()%26)+'a';
+    for (size_t i = 0 ; i < nchars; i++) {
+        key[i] = (char)(rand()%26)+'a';
     }
     key[nchars] = '\0';
     return key;

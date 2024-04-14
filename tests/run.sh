@@ -18,7 +18,7 @@ trap finish EXIT
 
 # Use address sanitizer if possible
 if [[ "$1" != "bench" ]]; then
-    CFLAGS="-O0 -g3 -Wall -Wextra -fstrict-aliasing $CFLAGS"
+    CFLAGS="-O0 -g3 -std=c99 -Wall -Wextra -Wsign-conversion -Wsign-compare -fstrict-aliasing $CFLAGS"
     if [[ ("$CC" == "" || "$CC" == "clang") && "`which clang`" != "" ]]; then
         CC=clang
         CFLAGS="$CFLAGS -fno-omit-frame-pointer"

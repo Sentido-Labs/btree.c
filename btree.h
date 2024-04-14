@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 struct btree;
+typedef ptrdiff_t btree_i; // Signed type for element indexes.
 
 // btree_new returns a new B-tree.
 //
@@ -23,7 +24,7 @@ struct btree;
 // and the item callbacks defined in btree_set_item_callbacks.
 //
 // The btree must be freed with btree_free(). 
-struct btree *btree_new(size_t elsize, size_t max_items,
+struct btree *btree_new(size_t elsize, btree_i max_items,
     int (*compare)(const void *a, const void *b, void *udata),
     void *udata);
 
@@ -35,7 +36,7 @@ struct btree *btree_new_with_allocator(
     void *(*realloc)(void *, size_t), 
     void (*free)(void*),
     size_t elsize, 
-    size_t max_items,
+    btree_i max_items,
     int (*compare)(const void *a, const void *b, void *udata),
     void *udata);
 
@@ -70,7 +71,7 @@ bool btree_oom(const struct btree *btree);
 size_t btree_height(const struct btree *btree);
 
 // btree_count returns the number of items in the btree.
-size_t btree_count(const struct btree *btree);
+btree_i btree_count(const struct btree *btree);
 
 // btree_clone makes an instant copy of the btree.
 // This operation uses shadowing / copy-on-write.
@@ -185,7 +186,7 @@ bool btree_descend_hint(const struct btree *btree, const void *pivot,
 
 // btree_set_searcher allows for setting a custom search function.
 void btree_set_searcher(struct btree *btree, 
-    int (*searcher)(const void *items, size_t nitems, const void *key, 
+    btree_i (*searcher)(const void *items, btree_i nitems, const void *key,
         bool *found, void *udata));
 
 // Loop-based iterator

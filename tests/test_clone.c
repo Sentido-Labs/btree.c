@@ -1,5 +1,5 @@
-#include <pthread.h>
 #include "tests.h"
+#include <pthread.h> // After tests.h so that _POSIX_C_SOURCE affects <time.h>.
 
 void pair_print(void *item) {
     printf("%d:%d", ((struct pair*)item)->key, ((struct pair*)item)->val);
@@ -21,11 +21,11 @@ void pair_free(const void *item, void *udata) {
 }
 
 void test_clone_items_withcallbacks(bool withcallbacks) {    
-    size_t N = 10000;
+    btree_i N = 10000;
     struct pair *pairs;
-    while (!(pairs = xmalloc(sizeof(struct pair) * N)));
+    while (!(pairs = xmalloc(sizeof(struct pair) * (size_t)N)));
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         pairs[i].key = i;
         pairs[i].val = 0;
     }
@@ -40,7 +40,7 @@ void test_clone_items_withcallbacks(bool withcallbacks) {
         if (withcallbacks) {
             btree_set_item_callbacks(btree, pair_clone, pair_free);
         }
-        for (size_t i = 0; i < N; i++) {
+        for (btree_i i = 0; i < N; i++) {
             const void *v;
             OOM_WAIT( { v = btree_load(btree, &pairs[i]); } );
             assert(!v);
@@ -55,7 +55,7 @@ void test_clone_items_withcallbacks(bool withcallbacks) {
         btree_set_item_callbacks(btree, pair_clone, pair_free);
     }
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *prev;
         OOM_WAIT( { prev = btree_load(btree, &pairs[i]); } );
         assert(!prev);
@@ -64,7 +64,7 @@ void test_clone_items_withcallbacks(bool withcallbacks) {
     assert(btree_count(btree) == N);
     assert(btree_sane(btree));
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         struct pair pair2 = pairs[i];
         pair2.val++;
         const void *prev;
@@ -77,7 +77,7 @@ void test_clone_items_withcallbacks(bool withcallbacks) {
     assert(btree_sane(btree));
 
 
-    for (size_t i = 0; i < N; i += 2) {
+    for (btree_i i = 0; i < N; i += 2) {
         const void *v;
         OOM_WAIT( { v = btree_delete(btree, &pairs[i]); } );
         assert(v && ((struct pair*)v)->key == pairs[i].key);
@@ -100,11 +100,11 @@ void test_clone_items_nocallbacks(void) {
 
 void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
 
-    size_t N = 10000;
+    btree_i N = 10000;
     struct pair *pairs;
-    while (!(pairs = xmalloc(sizeof(struct pair) * N)));
+    while (!(pairs = xmalloc(sizeof(struct pair) * (size_t)N)));
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         pairs[i].key = i;
         pairs[i].val = 0;
     }
@@ -119,7 +119,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
     if (withcallbacks) {
         btree_set_item_callbacks(btree1, pair_clone, pair_free);
     }
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *prev;
         btree = btree1;
         OOM_WAIT( { prev = btree_set(btree1, &pairs[i]); } );
@@ -136,7 +136,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
 
     // update btree1 to have val = 1
     
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         struct pair pair1 = pairs[i];
         pair1.val = 1;
         const void *prev;
@@ -148,7 +148,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
 
     // update btree2 to have val = 2
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         struct pair pair2 = pairs[i];
         pair2.val = 2;
         const void *prev;
@@ -158,7 +158,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
         assert(((struct pair*)prev)->val == 0);
     }
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         btree = btree1;
         OOM_WAIT( { v = btree_get(btree, &pairs[i]); } );
@@ -166,7 +166,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
         assert(((struct pair*)v)->val == 1);
     }
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         btree = btree2;
         OOM_WAIT( { v = btree_get(btree, &pairs[i]); } );
@@ -180,7 +180,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
     assert(btree_count(btree2) == N);
 
 
-    for (size_t i = 0; i < N; i += 2) {
+    for (btree_i i = 0; i < N; i += 2) {
         const void *prev;
         btree = btree1;
         OOM_WAIT( { prev = btree_delete(btree, &pairs[i]); } );
@@ -188,7 +188,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
         assert(((struct pair*)prev)->val == 1);
     }
 
-    for (size_t i = 0; i < N; i += 2) {
+    for (btree_i i = 0; i < N; i += 2) {
         const void *prev;
         btree = btree2;
         OOM_WAIT( { prev = btree_delete(btree, &pairs[i]); } );
@@ -203,14 +203,14 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
     assert(btree_count(btree2) == N/2);
 
 
-    for (size_t i = 0; i < N; i+=2) {
+    for (btree_i i = 0; i < N; i+=2) {
         const void *v;
         btree = btree1;
         OOM_WAIT( { v = btree_get(btree, &pairs[i]); } );
         assert(!v);
     }
 
-    for (size_t i = 0; i < N; i+=2) {
+    for (btree_i i = 0; i < N; i+=2) {
         const void *v;
         btree = btree2;
         OOM_WAIT( { v = btree_get(btree, &pairs[i]); } );
@@ -218,7 +218,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
     }
 
 
-    for (size_t i = 1; i < N; i+=2) {
+    for (btree_i i = 1; i < N; i+=2) {
         const void *v;
         btree = btree1;
         OOM_WAIT( { v = btree_get(btree, &pairs[i]); } );
@@ -226,7 +226,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
         assert(((struct pair*)v)->val == 1);
     }
 
-    for (size_t i = 1; i < N; i+=2) {
+    for (btree_i i = 1; i < N; i+=2) {
         const void *v;
         btree = btree2;
         OOM_WAIT( { v = btree_get(btree, &pairs[i]); } );
@@ -235,7 +235,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
     }
 
 
-    for (size_t i = 1; i < N; i += 2) {
+    for (btree_i i = 1; i < N; i += 2) {
         const void *v;
         btree = btree1;
         OOM_WAIT( { v = btree_delete(btree, &pairs[i]); } );
@@ -243,7 +243,7 @@ void test_clone_pairs_diverge_withcallbacks(bool withcallbacks) {
         assert(((struct pair*)v)->val == 1);
     }
 
-    for (size_t i = 1; i < N; i += 2) {
+    for (btree_i i = 1; i < N; i += 2) {
         const void *v;
         btree = btree2;
         OOM_WAIT( { v = btree_delete(btree, &pairs[i]); } );
@@ -342,9 +342,9 @@ struct thctx {
 };
 
 struct cobj **cobjs_clone_all(struct cobj **objs, int NOBJS) {
-    struct cobj **objs2 = xmalloc(NOBJS*sizeof(struct cobj));
+    struct cobj **objs2 = xmalloc((size_t)NOBJS*sizeof(struct cobj));
     if (!objs2) return NULL;
-    memset(objs2, 0, NOBJS*sizeof(struct cobj));
+    memset(objs2, 0, (size_t)NOBJS*sizeof(struct cobj));
     for (int i = 0; i < NOBJS; i++) {
         objs2[i] = cobj_clone(objs[i]);
         if (!objs2[i]) {
@@ -368,7 +368,7 @@ void *thdwork(void *tdata) {
 
     // copy the objs and btree
     rsleep(0.1, 0.2);
-    struct cobj **objscp = xmalloc(NOBJS*sizeof(struct cobj));
+    struct cobj **objscp = xmalloc((size_t)NOBJS*sizeof(struct cobj));
     assert(objscp);
     for (int i = 0; i < NOBJS; i++) {
         objscp[i] = cobj_clone(objs[i]);
@@ -396,7 +396,7 @@ void *thdwork(void *tdata) {
         assert(btree_delete(btree, &objs[i]));
 
     }
-    assert(btree_count(btree) == (size_t)NOBJS/2);
+    assert(btree_count(btree) == NOBJS/2);
 
 
 
@@ -420,7 +420,7 @@ void test_clone_threads(void) {
     pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
     int NOBJS = 10000;
     int NCLONES = 20;
-    struct cobj **objs = xmalloc(sizeof(struct cobj*)*NOBJS);
+    struct cobj **objs = xmalloc(sizeof(struct cobj*)*(size_t)NOBJS);
     assert(objs);
     struct btree *btree = btree_new_for_test(sizeof(struct cobj*), 5, 
         cobj_compare, nothing);
@@ -444,7 +444,7 @@ void test_clone_threads(void) {
         }
     }
 
-    assert(btree_count(btree) == (size_t)NOBJS);
+    assert(btree_count(btree) == (btree_i)NOBJS);
     struct btree *btree2 = btree_clone(btree);
     assert(btree2);
 
@@ -452,7 +452,7 @@ void test_clone_threads(void) {
 
     // we now have a list of objects and a btree fill the same objects.
     int ncloned = 0;
-    pthread_t *threads = xmalloc(NCLONES*sizeof(pthread_t));
+    pthread_t *threads = xmalloc((size_t)NCLONES*sizeof(pthread_t));
     for (int i = 0; i < NCLONES; i++) {
         assert(!pthread_create(&threads[i], NULL, thdwork, &(struct thctx){
             .mu = &mu,
@@ -509,11 +509,11 @@ void test_clone_threads(void) {
 
 void test_clone_delete_withcallbacks(bool withcallbacks) {
     
-    size_t N = 10000;
+    btree_i N = 10000;
     struct pair *pairs;
-    while (!(pairs = xmalloc(sizeof(struct pair) * N)));
+    while (!(pairs = xmalloc(sizeof(struct pair) * (size_t)N)));
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         pairs[i].key = i;
         pairs[i].val = 0;
     }
@@ -527,7 +527,7 @@ void test_clone_delete_withcallbacks(bool withcallbacks) {
     if (withcallbacks) {
         btree_set_item_callbacks(btree, pair_clone, pair_free);
     }
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         OOM_WAIT( { v = btree_load(btree, &pairs[i]); } );
         assert(!v);
@@ -543,7 +543,7 @@ void test_clone_delete_withcallbacks(bool withcallbacks) {
     assert(btree_sane(btree2));
 
     shuffle(pairs, N, sizeof(struct pair));
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         OOM_WAIT( { v = btree_delete(btree, &pairs[i]); } );
         assert(v);
@@ -552,7 +552,7 @@ void test_clone_delete_withcallbacks(bool withcallbacks) {
     }
 
     shuffle(pairs, N, sizeof(struct pair));
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         struct btree *btree = btree2; // this is needed for OOM_WAIT;
         OOM_WAIT( { v = btree_delete(btree, &pairs[i]); } );
@@ -575,11 +575,11 @@ void test_clone_delete_nocallbacks(void) {
 }
 
 void test_clone_pop_withcallbacks(bool withcallbacks) {
-    size_t N = 10000;
+    btree_i N = 10000;
     struct pair *pairs;
-    while (!(pairs = xmalloc(sizeof(struct pair) * N)));
+    while (!(pairs = xmalloc(sizeof(struct pair) * (size_t)N)));
 
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         pairs[i].key = i;
         pairs[i].val = 0;
     }
@@ -593,7 +593,7 @@ void test_clone_pop_withcallbacks(bool withcallbacks) {
     if (withcallbacks) {
         btree_set_item_callbacks(btree1, pair_clone, pair_free);
     }
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         struct btree *btree = btree1;
         OOM_WAIT( { v = btree_load(btree, &pairs[i]); } );
@@ -610,7 +610,7 @@ void test_clone_pop_withcallbacks(bool withcallbacks) {
     assert(btree_sane(btree2));
 
     shuffle(pairs, N, sizeof(struct pair));
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         struct btree *btree = btree1;
         OOM_WAIT( { v = btree_pop_min(btree); } );
@@ -622,7 +622,7 @@ void test_clone_pop_withcallbacks(bool withcallbacks) {
     btree_free(btree1);
     while(!(btree1 = btree_clone(btree2)));
     shuffle(pairs, N, sizeof(struct pair));
-    for (size_t i = 0; i < N; i++) {
+    for (btree_i i = 0; i < N; i++) {
         const void *v;
         struct btree *btree = btree2; // this is needed for OOM_WAIT;
         OOM_WAIT( { v = btree_pop_max(btree); } );
